@@ -5,21 +5,40 @@ import { CircularProgressbar } from "react-circular-progressbar";
 import "react-circular-progressbar/dist/styles.css";
 import { ethers } from "ethers";
 import { CONTRACT_ADDRESS, CONTRACT_ABI } from "./contract";
+import { GROUP_CONTRACT_ADDRESS, GROUP_CONTRACT_ABI } from "./groupContract";
 
 function App() {
+  
   const [screen, setScreen] = useState("welcome");
   const [nickname, setNickname] = useState("");
   const [tempName, setTempName] = useState("");
 
+ const [challengeName, setChallengeName] = useState("");
+ const [challengeDuration, setChallengeDuration] = useState("");
+ const [challengeFee, setChallengeFee] = useState("");
+ const [challenges, setChallenges] = useState([]);
+
+ function getChallengeContract(signerOrProvider) {
+  return new ethers.Contract(
+    GROUP_CONTRACT_ADDRESS,
+    GROUP_CONTRACT_ABI,
+    signerOrProvider
+  );
+}
+  
+  //progres bar
   const [days, setDays] = useState(0);
   const [saved, setSaved] = useState(0);
 
-  const [badges, setBadges] = useState([]);
+  const [badges, setBadges] = useState([]); //aktivni 
   const [archivedBadges, setArchivedBadges] = useState([]);
   const [newBadge, setNewBadge] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [isLoaded, setIsLoaded] = useState(false);
+  
+  // dok traje blockchain transakcija
+  const [loading, setLoading] = useState(false); // transakcjia traje
+  const [isLoaded, setIsLoaded] = useState(false); // transkacija gotova
 
+  //micanje obavijesti 
   const [fadeOut, setFadeOut] = useState(false);
 
   const milestones = [1, 7, 15, 30, 60];
@@ -32,29 +51,27 @@ function App() {
     "Slipped often",
   ];
 
-  function delay(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
 
-  useEffect(() => {
-    const savedDays = sessionStorage.getItem("days");
-    const savedMoney = sessionStorage.getItem("saved");
+
+  useEffect(() => { //load podataka
+    const savedDays = sessionStorage.getItem("days"); //dohvati podatke
+    const savedMoney = sessionStorage.getItem("saved"); 
     const savedName = sessionStorage.getItem("nickname");
     const savedArchived = sessionStorage.getItem("archivedBadges");
 
-    if (savedDays !== null) setDays(Number(savedDays));
+    if (savedDays !== null) setDays(Number(savedDays)); //ucitaj 
     if (savedMoney !== null) setSaved(Number(savedMoney));
     if (savedArchived) setArchivedBadges(JSON.parse(savedArchived));
 
-    if (savedName) {
+    if (savedName) { // ako postoji user salji ga na dashboard
       setNickname(savedName);
-      setScreen("dashboard");
+      setScreen("modeSelect");
     }
 
     setIsLoaded(true);
   }, []);
 
-  useEffect(() => {
+  useEffect(() => { //save podataka
     if (!isLoaded) return;
 
     sessionStorage.setItem("days", days);
@@ -63,7 +80,7 @@ function App() {
     sessionStorage.setItem("archivedBadges", JSON.stringify(archivedBadges));
   }, [days, saved, nickname, archivedBadges, isLoaded]);
 
-useEffect(() => {
+useEffect(() => { // BADGE POPUP
   if (newBadge) {
     setFadeOut(false);
 
@@ -89,7 +106,7 @@ useEffect(() => {
       return;
     }
 
-    await window.ethereum.request({ method: "eth_requestAccounts" });
+    await window.ethereum.request({ method: "eth_requestAccounts" }); // MetaMask popup
     const userAddress = window.ethereum.selectedAddress;
 
     console.log(" CONNECTED WALLET:", userAddress);
@@ -97,7 +114,7 @@ useEffect(() => {
     const savedName = sessionStorage.getItem("nickname");
     if (savedName) {
       setNickname(savedName);
-      setScreen("dashboard");
+      setScreen("modeSelect");
     } else {
       setScreen("nickname");
     }
@@ -108,17 +125,17 @@ useEffect(() => {
       alert("Upiši nadimak");
       return;
     }
-    setNickname(tempName);
-    setScreen("dashboard");
+    setNickname(tempName); // spremi 
+    setScreen("modeSelect");
   }
 
   async function markSmokeFree() {
    if (!window.ethereum) {
     alert("Install MetaMask");
     return;
-  }
+    }
 
-  try {
+    try {
     setLoading(true);
 
     console.log("CLICKED Smoke Free Today");
@@ -126,7 +143,7 @@ useEffect(() => {
     const newDay = days + 1;
 
     // NETWORK CHECK
-    const provider = new ethers.BrowserProvider(window.ethereum);
+    const provider = new ethers.BrowserProvider(window.ethereum); //povezivanje blck i frnt 
     const network = await provider.getNetwork();
 
     const EXPECTED_CHAIN_ID = 11155111;
@@ -150,22 +167,22 @@ useEffect(() => {
     console.log("NEW DAY:", newDay);
     console.log("MILESTONE HIT SENDING TX");
 
-    const signer = await provider.getSigner();
+    const signer = await provider.getSigner(); //user potipsuje 
     const user = await signer.getAddress();
 
     console.log("USER ADDRESS:", user);
 
-    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
+    const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer); // instanca smart contracta
 
-    const tx = await contract.markSmokeFree();
+    const tx = await contract.markSmokeFree(); //salje tranksakcju 
 
     console.log("TX HASH:", tx.hash);
 
-    await tx.wait();
+    await tx.wait(); // cekanje potvrde transkcije
 
     console.log("TX CONFIRMED");
 
-    // TEK NAKON USPJEŠNOG TX UPDATE UI
+    // azuriranje stanja i novi badge se prikzuje
     setDays(newDay);
     setSaved(newDay * 3.5);
 
@@ -178,18 +195,19 @@ useEffect(() => {
 
     setLoading(false);
 
-  } catch (error) {
+   } catch (error) {
     console.error("ERROR:", error);
     alert("Transaction failed");
     setLoading(false);
+   }
   }
-}
- //promjejneno - potrebno provjeriti. 
+
+
   async function slippedToday() {
 
-  try {
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
+   try {
+    const provider = new ethers.BrowserProvider(window.ethereum); //aplikacija povezana s metamask
+    const signer = await provider.getSigner(); // dohvcanje aktv account postaje singer
 
     const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, signer);
 
@@ -198,36 +216,108 @@ useEffect(() => {
     const tx = await contract.resetStreak();
     console.log("TX HASH:", tx.hash);
 
-    await tx.wait();
+    await tx.wait(); //potvrda transakcije slippa
 
     console.log("STREAK RESET ON BLOCKCHAIN");
-  } catch (err) {
+   } catch (err) {
     console.error("RESET FAILED:", err);
-  }
+   }
 
-  setArchivedBadges((prev) => {
-    const updated = [...prev];
 
-    badges.forEach((day) => {
-      const existingIndex = updated.findIndex((b) => b.day === day);
+   setArchivedBadges((prev) => {
+    const updated = [...prev]; 
 
-      if (existingIndex !== -1) {
+    badges.forEach((day) => { //svi trenutni badgevi prolazak
+      const existingIndex = updated.findIndex((b) => b.day === day); //postoji i taj bedge?
+
+      if (existingIndex !== -1) { //postoji
         updated[existingIndex] = {
           ...updated[existingIndex],
-          slipped: updated[existingIndex].slipped + 1,
+          slipped: updated[existingIndex].slipped + 1, //povecava broj relapsa 
         };
       } else {
-        updated.push({ day, slipped: 1 });
+        updated.push({ day, slipped: 1 }); //dodavanje novog zapisa
       }
     }); 
 
     return updated;
-  });
+   });
 
-  setDays(0);
-  setSaved(0);
-  setBadges([]);
-  setNewBadge(null);
+    setDays(0);
+    setSaved(0);
+    setBadges([]);
+    setNewBadge(null);
+  }
+
+  async function createChallenge() {
+  try {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+
+    const contract = getChallengeContract(signer);
+
+    const tx = await contract.createChallenge(
+      challengeName,
+      Number(challengeDuration),
+      ethers.parseEther(challengeFee)
+    );
+
+    await tx.wait();
+
+    alert("Challenge created!");
+
+  } catch (err) {
+    console.error(err);
+  }
+ }
+
+ async function joinChallenge(id, entryFee) {
+  try {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+
+    const contract = getChallengeContract(signer);
+
+    const tx = await contract.joinChallenge(id, {
+      value: ethers.parseEther("0")
+    });
+
+    await tx.wait();
+
+    alert("Joined challenge!");
+
+  } catch (err) {
+    console.error(err);
+  }
+ }
+
+ async function loadChallenges() {
+  try {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const contract = getChallengeContract(provider);
+
+    const list = [];
+
+    for (let i = 1; i <= 20; i++) {
+      try {
+        const c = await contract.getChallenge(i);
+
+        list.push({
+            id: c[0],
+            name: c[1],
+            duration: Number(c[2]),
+            creator: c[3],
+          });
+      } catch {
+        break;
+      }
+    }
+
+    setChallenges(list);
+
+  } catch (err) {
+    console.error(err);
+  }
 }
 
   return (
@@ -265,6 +355,26 @@ useEffect(() => {
               Continue
             </button>
           </>
+        )}
+
+         {screen === "modeSelect" && (  //dodano
+          <div>
+            <h2>Choose mode</h2>
+
+            <button
+              className="primary"
+              onClick={() => setScreen("dashboard")}
+            >
+              Play Solo
+            </button>
+
+            <button
+              className="primary"
+              onClick={() => setScreen("group")}
+            >
+              Group Play
+            </button>
+          </div>
         )}
 
         {screen === "dashboard" && (
@@ -340,8 +450,72 @@ useEffect(() => {
                 </div>
               </div>
             )}
+            <button
+             className="secondary"
+            onClick={() => setScreen("modeSelect")}    
+            >
+              Back
+            </button>
           </>
         )}
+
+{screen === "group" && (
+  <div>
+    <h2>Group Mode</h2>
+
+    <p>Create or join challenges</p>
+
+    <button className="primary" onClick={loadChallenges}>
+      Load Challenges
+    </button>
+
+    <div>
+      {challenges.length === 0 && <p>No challenges yet</p>}
+
+      {challenges.map((c) => (
+        <div key={c.id} className="badge">
+          <p>{c.name}</p>
+          <p>{c.duration} days</p>
+
+          <button
+            onClick={() => joinChallenge(c.id, c.entryFee)}
+          >
+            Join
+          </button>
+        </div>
+      ))}
+    </div>
+
+    <hr />
+
+    <h3>Create Challenge</h3>
+
+    <input
+      placeholder="Name"
+      onChange={(e) => setChallengeName(e.target.value)}
+    />
+    <input
+      placeholder="Duration"
+      onChange={(e) => setChallengeDuration(e.target.value)}
+    />
+    <input
+      placeholder="Fee (ETH)"
+      onChange={(e) => setChallengeFee(e.target.value)}
+    />
+
+    <button onClick={createChallenge}>
+      Create
+    </button>
+    <br />
+    <button
+      className="secondary"
+      onClick={() => setScreen("modeSelect")}
+    >
+      Back
+    </button>
+  </div>
+)}
+
       </div>
     </div>
   );

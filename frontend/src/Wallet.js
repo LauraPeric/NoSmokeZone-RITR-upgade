@@ -2,15 +2,15 @@ import { useState } from "react";
 import { ethers } from "ethers";
 import detectEthereumProvider from "@metamask/detect-provider";
 
-export default function Wallet() {
-  const [account, setAccount] = useState(null);
+export default function Wallet() { //ui za wallet connection
+  const [account, setAccount] = useState(null); //pamti adresu walleta nakon sapajanja
 
-  async function connectWallet() {
-    const provider = await detectEthereumProvider();
+  async function connectWallet() { //kad se klikne connect wallet
+    const provider = await detectEthereumProvider(); // metamask provjera u browseru
     if (provider) {
       try {
-        const accounts = await provider.request({ method: "eth_requestAccounts" });
-        setAccount(accounts[0]);
+        const accounts = await provider.request({ method: "eth_requestAccounts" }); //spajanje welleta
+        setAccount(accounts[0]); //soremanje accounta
       } catch (err) {
         console.error("User rejected connection:", err);
       }

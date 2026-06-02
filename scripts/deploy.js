@@ -17,8 +17,14 @@ async function main() {
 
   console.log("NoSmokeNFT deployed at:", noSmoke.target);
 
+ // 3. deploy GROUP CHALLENGE
+  const Group = await hre.ethers.getContractFactory("GroupChallenge");
+  const group = await Group.deploy();
+  await group.waitForDeployment();
 
-  // 3. povezivanje contracta
+  console.log("GroupChallenge deployed at:", group.target);
+
+  // 4. povezivanje contracta
   const tx = await badge.setNoSmokeContract(noSmoke.target);
   await tx.wait();
 
