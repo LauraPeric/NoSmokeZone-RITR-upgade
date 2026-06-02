@@ -1,139 +1,91 @@
 # NoSmokeZone – Blockchain Aplikacija
 
 **Fakultet:** Fakultet informatike u Puli  
-**Kolegij:** Blockchain aplikacije  
+**Kolegij:** Razvoj IT rješenja  
 **Nositelj kolegija:** doc. dr. sc. Nikola Tanković  
 **Asistent:** Luka Sever, mag. inf.  
-**Student:** Laura Perić
+**Student:** Laura Perić  
+
+---
+
+### 🔄 Napomena o razvoju i nadogradnji projekta
+Ovaj projekt predstavlja naprednu nadogradnju inicijalnog rješenja razvijenog u sklopu prethodnih faza rada. Fokus ove iteracije bio je na uvođenju kompleksnije pametne logike (Smart Contract-driven escrow) i elemenata decentraliziranih financija (DeFi) kroz grupnu dinamiku.
+
+**Što je preuzeto iz prethodne verzije:**
+* Temeljna ideja praćenja osobnog streaka pušenja.
+* Inicijalna struktura React frontend-a i bazični pametni ugovor za solo milestone NFT-ove.
+
+**Ključne nadogradnje u ovoj verziji (Fokus ovog rada):**
+1. **Group Mode (DeFi/Staking element):** Potpuno novi pametni ugovor (`GroupChallenges`) koji samostalno upravlja grupnom dinamikom, zaključavanjem ETH uloga (escrow pool) i decentraliziranom distribucijom financijskih nagrada.
+2. **Dinamička personalizacija:** Proširenje NFT logike koja sada omogućuje korisnicima slanje prilagođenih parametara (metadata) prije samog mintanja pojedinačnih bedževa.
+3. **Zajednički grupni NFT-ovi:** Implementacija logike koja prati ponašanje cijele grupe i nagrađuje timski rad specifičnim, zajedničkim NFT-om ako svi članovi uspješno završe izazov.
+4. **Refaktoriranje koda:** Prilagodba frontend sučelja za rad s više pametnih ugovora istovremeno i optimizacija prikaza aktivnih sesija.
 
 ---
 
 ## 🧠 Opis projekta
 
-**NoSmokeZone** je decentralizirana blockchain aplikacija čiji je cilj potaknuti korisnike na prestanak pušenja kroz gamifikaciju u obliku NFT nagrada. Sustav omogućuje korisnicima praćenje osobnog “streaka” (uzastopnih dana bez pušenja) te automatsko dobivanje NFT bedževa kada dosegnu određene milestone-ove.
+**NoSmokeZone** je decentralizirana blockchain aplikacija (dApp) čiji je cilj potaknuti korisnike na prestanak pušenja kroz gamifikaciju u obliku NFT nagrada i ekonomskih poticaja. Sustav omogućuje korisnicima praćenje osobnog "streaka" (uzastopnih dana bez pušenja), ali i sudjelovanje u **grupnim izazovima s ulozima** (DeFi element), čime se povećava odgovornost i motivacija za ustrajanje.
 
 Aplikacija se sastoji od:
-* frontend dijela razvijenog u **Reactu**
-* smart contracta implementiranih u **Solidity jeziku** koji su deployani na **Sepolia testnet**
+* **Frontend dijela** razvijenog u Reactu.
+* **Smart contracta** implementiranih u Solidity jeziku koji su deployani na Sepolia testnet.
 
-Interakcija s blockchainom ostvaruje se putem **MetaMask walleta**.
-
-Sustav ne koristi klasični backend server, već se oslanja na decentraliziranu logiku izvršavanja putem smart contracta.
+Interakcija s blockchainom ostvaruje se putem MetaMask walleta. Sustav ne koristi klasični backend server, već se u potpunosti oslanja na decentraliziranu logiku izvršavanja i pohrane putem pametnih ugovora.
 
 ---
 
 ## 🛠 Korištene tehnologije i servisi
 
-### Frontend: React (JavaScript, HTML, CSS)
-
-Aplikacija je razvijena u React frameworku koji omogućuje izgradnju dinamičkog korisničkog sučelja. Frontend upravlja:
-* stanjem aplikacije  
-* interakcijom s korisnikom  
-* komunikacijom sa smart contractom putem Web3 biblioteka (npr. ethers.js)
-
-### Blockchain: Ethereum Sepolia Testnet
-
-Za razvoj i testiranje koristi se Ethereum Sepolia test mreža koja omogućuje besplatno testiranje transakcija bez stvarnog troška. Smart contracti su deployani na ovoj mreži i dostupni putem javnih adresa.
-
-### Smart Contracts: Solidity
-
-Logika aplikacije implementirana je u Solidity pametnim ugovorima:
-
-* **NoSmokeNFT** – upravlja streak logikom i interakcijom s badge contractom  
-* **SmokeFreeBadges** – upravlja mintanjem NFT nagrada i metadata URI-jevima  
-
-### Wallet integracija: MetaMask
-
-Korisnici se autentificiraju i potpisuju transakcije putem MetaMask walleta. MetaMask omogućuje sigurno upravljanje privatnim ključevima i interakciju s blockchainom.
-
-### Pohrana metadata: IPFS
-
-NFT metadata (JSON datoteke i slike) pohranjuju se na **IPFS (InterPlanetary File System)**, što omogućuje decentraliziranu i trajnu pohranu sadržaja povezanog s NFT-ovima.
+* **Frontend:** React (JavaScript, HTML, CSS) – Upravlja stanjem aplikacije, UI komponentama te komunikacijom sa smart contractima putem Web3 biblioteka (`ethers.js`).
+* **Blockchain:** Ethereum Sepolia Testnet – Testna mreža koja omogućuje besplatno izvršavanje transakcija i testiranje dApp-a bez stvarnog financijskog troška.
+* **Smart Contracts:** Solidity – Implementira kompletnu logiku aplikacije kroz tri pametna ugovora:
+  * `NoSmokeNFT` – Upravlja osobnom streak logikom i provjerom milestone-ova.
+  * `SmokeFreeBadges` – Upravlja mintanjem i dinamičkim/personaliziranim metapodacima za NFT nagrade.
+  * `GroupChallenges` *(Novo)* – Upravlja kreiranjem grupa, zaključavanjem ETH uloga (escrow fond) i distribucijom nagrada nakon završetka izazova.
+* **Wallet integracija:** MetaMask – Autentifikacija korisnika i sigurno potpisivanje transakcija.
+* **Pohrana metadata:** IPFS (InterPlanetary File System) – Decentralizirana i trajna pohrana slika i JSON metapodataka povezanih s NFT bedževima.
 
 ---
 
 ## 🎯 Glavne funkcionalnosti
 
-* ✅ Povezivanje MetaMask walleta  
-* ✅ Praćenje korisničkog streaka bez pušenja  
-* ✅ Manualno označavanje dana bez pušenja (“mark smoke free”)  
-* ✅ Reset streaka u slučaju “slip-up” događaja  
-* ✅ Automatsko mintanje NFT bedževa pri milestone-ovima (1, 7, 15, 30, 60 dana)  
-* ✅ Pregled korisničkih NFT-ova  
-* ✅ Interakcija sa smart contractom putem blockchain transakcija  
+### 1. Solo način rada (Personal Streak)
+* ✅ Povezivanje MetaMask walleta.
+* ✅ Manualno označavanje dana bez pušenja (“mark smoke free”).
+* ✅ Reset osobnog streaka u slučaju pokleknuća (“slip-up”).
+* ✅ Automatsko mintanje NFT bedževa pri milestone-ovima (1, 7, 15, 30, 60 dana).
+* ✅ **Personalizacija bedževa (Novo):** Korisnici mogu unijeti prilagođene parametre (npr. vlastito ime, motivacijsku poruku ili odabir vizualnog stila) prije mintanja milestone NFT-a.
+
+### 2. Grupni izazovi (Group Mode) – *(Novo)*
+* ✅ **Kreiranje i pridruživanje grupama:** Korisnici mogu kreirati manje izazove s definiranim trajanjem (u danima) i ulogom, ili se pridružiti postojećima.
+* ✅ **Zajednički fond (Staking Pool):** Prilikom ulaska u grupu, svaki član uplaćuje obvezan iznos u kriptovaluti (ETH), čime se formira zajednički nagradni fond koji se zaključava unutar pametnog ugovora.
+* ✅ **Praćenje i penalizacija:** Korisnici unutar grupe prate svoj napredak. Ako netko prijavi "slip-up" ili ne održi streak do kraja izazova, gubi pravo na svoj ulog.
+* ✅ **Distribucija fonda:** Po završetku izazova, pametni ugovor automatiziranim algoritmom pravedno dijeli cijeli zajednički fond (uključujući uloge onih koji su odustali) samo na adrese članova koji su uspješno izdržali izazov do kraja.
+* ✅ **Grupni NFT (Team Achievement):** U slučaju da *svi* članovi grupe uspješno završe izazov bez ijednog neuspjeha, pametni ugovor minta poseban, rijedak zajednički NFT za cijeli tim kao dokaz savršenog timskog postignuća.
 
 ---
 
 ## 🧩 Pregled komponenti sustava
 
 | Komponenta | Opis funkcionalnosti |
-|------------|---------------------|
-| React frontend | Korisničko sučelje aplikacije |
-| NoSmokeNFT smart contract | Upravljanje streak logikom i milestone provjerama |
-| SmokeFreeBadges smart contract | Mintanje NFT bedževa i metadata |
-| MetaMask | Upravljanje walletom i potpisivanje transakcija |
-| Sepolia testnet | Blockchain mreža za deploy i testiranje |
-| IPFS | Decentralizirana pohrana NFT metadata |
+| :--- | :--- |
+| **React frontend** | Korisničko sučelje aplikacije (Solo Dashboard, Group Mode screen, NFT Minting panel). |
+| **NoSmokeNFT contract** | Upravlja osobnom streak logikom, milestone provjerama i custom metapodacima. |
+| **GroupChallenges contract** | Upravlja logikom grupa, primanjem uplata (fondova), provjerom statusa grupa i isplatama. |
+| **SmokeFreeBadges contract** | Mintanje personaliziranih individualnih bedževa i specijalnih grupnih NFT-ova. |
+| **MetaMask** | Upravlja privatnim ključevima, potpisivanjem transakcija i slanjem uloga u pametni ugovor. |
+| **Sepolia testnet** | Blockchain mreža na kojoj se nalaze ugovori i izvršavaju transakcije. |
+| **IPFS** | Decentralizirana pohrana slika i dinamički generiranih JSON datoteka za NFT-ove. |
 
 ---
 
 ## ⚙️ Pokretanje aplikacije
 
-Aplikacija će se pokrenuti na:
-
-http://localhost:3000
-
----
+Aplikacija se lokalno pokreće na lokaciji: `http://localhost:3000`
 
 ### 📁 Pokretanje frontend aplikacije
-
 ```bash
 cd frontend
 npm install
 npm start
-```
----
-### 📁 Deploy smart contracta (Hardhat)
-
-```bash
-npx hardhat compile
-npx hardhat run scripts/deploy.js --network sepolia
-```
-Nakon deploya dobiva se adresa smart contracta koja se koristi u frontend konfiguraciji.
-
----
-
-### 📁 Konfiguracija frontend-a
-
-U frontend projektu potrebno je postaviti:
-
-```bash
-CONTRACT_ADDRESS
-CONTRACT_ABI
-```
-Nakon toga povezati MetaMask wallet na Sepolia network.
-
----
-
-### 🔗 Interakcija sa sustavom
-
-Korisnik:
-
-* Povezuje MetaMask wallet
-* Klikne “Mark Smoke Free” → šalje transakciju
-* Smart contract povećava streak
-* Ako je milestone dosegnut → minta NFT
-* NFT se prikazuje u korisničkom sučelju
-
-U slučaju “slip-up” događaja:
-
-* korisnik resetira streak putem transakcije
-* stanje se ažurira na blockchainu
-
----
-
-### 🧠 Zaključak
-
-NoSmokeZone predstavlja decentraliziranu aplikaciju koja koristi blockchain tehnologiju za transparentno i sigurno praćenje korisničkog napretka. Korištenjem smart contracta eliminira se potreba za centraliziranim backendom, dok NFT bedževi služe kao digitalna motivacija i dokaz postignuća.
-
-Aplikacija demonstrira primjenu Web3 tehnologija u stvarnom scenariju kroz kombinaciju React frontend-a, Ethereum blockchaina, smart contracta i IPFS-a.
