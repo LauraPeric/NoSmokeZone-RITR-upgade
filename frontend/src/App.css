@@ -201,3 +201,147 @@ font-weight:bold;
 .locked{
 color:#888;
 }
+
+.group-container {
+  padding: 20px;
+}
+
+.challenge-card {
+  background: #ffffff;
+  color: #1a1a1a;
+  padding: 15px;
+  margin-bottom: 12px;
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+}
+
+.card-header h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.card-body p {
+  margin: 4px 0;
+  color: #444;
+}
+
+.join-btn {
+  background: #00c853;
+  border: none;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.create-box {
+  margin-top: 20px;
+  padding: 18px;
+  background: #ffffff;
+  border-radius: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
+}
+
+.create-box input {
+  padding: 12px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 14px;
+}
+
+.full {
+  width: 100%;
+}
+
+.back-btn {
+  margin-top: 15px;
+  opacity: 0.7;
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-box {
+  background: #222;
+  padding: 20px;
+  border-radius: 12px;
+}
+
+.status {
+  font-size: 12px;
+  color: #666;
+}
+
+.group-menu,
+div[screen="modeSelect"] {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.mode-select {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.text-button {
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 14px;
+  margin-top: 20px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.text-button:hover {
+  color: #000;
+}
+
+input[type=number]::-webkit-outer-spin-button,
+input[type=number]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type=number] {
+  -moz-appearance: textfield;
+}
+
+.input:focus,
+.create-box input:focus {
+  outline: none;
+  border: 1px solid #cfe8c8;
+  box-shadow: 0 0 0 3px rgba(207, 232, 200, 0.4);
+}
+
+@media (max-width: 420px) {
+  .card {
+    width: 92%;
+    padding: 20px;
+    border-radius: 20px;
+  }
+
+  .app {
+    padding: 10px;
+    align-items: flex-start;
+  }
+
+  .buttons {
+    flex-direction: column;
+  }
+
+  .circle {
+    width: 55px;
+  }
+}
