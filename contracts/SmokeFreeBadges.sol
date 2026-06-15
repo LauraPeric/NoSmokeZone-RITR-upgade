@@ -27,7 +27,8 @@ contract SmokeFreeBadges is ERC721URIStorage, Ownable { // nft contract+ima owne
             milestone == 7 ||
             milestone == 15 ||
             milestone == 30 ||
-            milestone == 60,
+            milestone == 60 ||
+            milestone == 100, // DODANO: Dopušta mintanje grupnog NFT-a pod brojem 100
             "Invalid milestone"
         );
 
@@ -57,6 +58,9 @@ contract SmokeFreeBadges is ERC721URIStorage, Ownable { // nft contract+ima owne
     }
     if (milestone == 60) {
         return "ipfs://bafybeif5ujkllemacyptavexdu6lx2wfscxnlkokcwvbpb6bepn25wtp4q/day60.json";
+    }
+    if (milestone == 100) {
+        return "ipfs://bafkreignkt7xq7smgiyz2t6n27yxgwy4i7aafqhi2xm4tz5dlsgzbk5i7i"; // DODANO: Vraća tvoj grupni JSON s Pinate
     }
 
     return "";
