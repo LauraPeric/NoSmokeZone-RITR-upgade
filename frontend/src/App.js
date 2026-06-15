@@ -43,8 +43,18 @@ function App() {
   const [isLoaded, setIsLoaded] = useState(false); 
 
   const milestones = [1, 7, 15, 30, 60];
+  
+  const [fadeOut, setFadeOut] = useState(false); 
 
-  useEffect(() => { 
+  const slipText = [
+  "Slipped once",
+  "Slipped twice",
+  "Slipped several times",
+  "Slipped many times",
+  "Slipped often",
+];
+
+ useEffect (() => { 
     const savedDays = sessionStorage.getItem("days"); 
     const savedMoney = sessionStorage.getItem("saved");
     const savedName = sessionStorage.getItem("nickname");
@@ -383,20 +393,81 @@ function App() {
           </div>
         )}
 
-        {screen === "dashboard" && (
+       {screen === "dashboard" && (
           <>
-            <h2>Hello {nickname} </h2>
+            <h2>Hello {nickname}</h2>
+
             <div className="streak-box">
-              <div><p>Smoke-free for</p><h1>{days} days</h1></div>
-              <div className="circle"><CircularProgressbar value={days} maxValue={60} text={`${days}`} /></div>
+              <div>
+                <p>Smoke-free for</p>
+                <h1>{days} days</h1>
+              </div>
+
+              <div className="circle">
+                <CircularProgressbar value={days} maxValue={60} text={`${days}`} />
+              </div>
             </div>
-            <div className="savings"><p>Saved</p><h1>{saved}€</h1></div>
-            
+
+            <div className="savings">
+              <p>Saved</p>
+              <h1>{saved}€</h1>
+            </div>
+
             <div className="buttons">
-              <button className="good" onClick={markSmokeFree} disabled={loading}>{loading ? "Minting..." : "Smoke-Free Today"}</button>
-              <button className="bad" onClick={slippedToday} disabled={loading}>I Slipped Today</button>
+              <button className="good" onClick={markSmokeFree} disabled={loading}>
+                {loading ? "Minting..." : "Smoke-Free Today"}
+              </button>
+
+              <button className="bad" onClick={slippedToday} disabled={loading}>
+                I Slipped Today
+              </button>
             </div>
-            <button className="text-button" onClick={() => setScreen("modeSelect")}>Change mode</button>
+
+            <div className="badges">
+              <h3>Badges</h3>
+              {badges.length === 0 && <p>No badges yet!</p>}
+              {badges.map((m) => (
+                <div key={m} className="badge earned-badge">
+                  <span className="icon">🏆</span>
+                  <span>Day {m}</span>
+                </div>
+              ))}
+            </div>
+
+            {archivedBadges.length > 0 && (
+              <div className="badges archived">
+                <h3>Past Achievements</h3>
+                {archivedBadges.map((b, i) => {
+                  let slipDisplay = "";
+                  if (b.slipped === 1) slipDisplay = slipText[0];
+                  else if (b.slipped === 2) slipDisplay = slipText[1];
+                  else if (b.slipped === 3) slipDisplay = slipText[2];
+                  else if (b.slipped === 4) slipDisplay = slipText[3];
+                  else slipDisplay = slipText[4];
+
+                  return (
+                    <div key={i} className="badge locked-badge">
+                      <span className="icon">🔒</span>
+                      <span>
+                        Day {b.day} ({slipDisplay})
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {newBadge && (
+              <div className={`popup ${fadeOut ? "fade-out" : ""}`}>
+                <div className="popup-content">
+                  <h2>🎉 New Badge!</h2>
+                  <p>You reached Day {newBadge}!</p>
+                  <button onClick={() => setNewBadge(null)}>Awesome!</button>
+                </div>
+              </div>
+            )}
+            <button className="text-button" onClick={() => { setGroupScreen("list"); setScreen("modeSelect"); }}>← Back to mode select</button>
+
           </>
         )}
 
