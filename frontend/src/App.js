@@ -32,8 +32,6 @@ function App() {
   const [days, setDays] = useState(0);
   const [saved, setSaved] = useState(0);
 
-  // LOBBY NAPREDAK
-  const [lobbyProgress, setLobbyProgress] = useState({});
 
   const [badges, setBadges] = useState([]); 
   const [archivedBadges, setArchivedBadges] = useState([]);
@@ -41,6 +39,8 @@ function App() {
 
   const [loading, setLoading] = useState(false); 
   const [isLoaded, setIsLoaded] = useState(false); 
+
+  const [lobbyProgress, setLobbyProgress] = useState({});
 
   const milestones = [1, 7, 15, 30, 60];
   
@@ -54,42 +54,53 @@ function App() {
   "Slipped often",
 ];
 
- useEffect (() => { 
-    const savedDays = sessionStorage.getItem("days"); 
-    const savedMoney = sessionStorage.getItem("saved");
-    const savedName = sessionStorage.getItem("nickname");
-    const savedArchived = sessionStorage.getItem("archivedBadges");
-    const savedLobbyProgress = sessionStorage.getItem("lobbyProgress");
+ useEffect(() => { 
+  const savedDays = sessionStorage.getItem("days"); 
+  const savedMoney = sessionStorage.getItem("saved");
+  const savedName = sessionStorage.getItem("nickname");
+  const savedArchived = sessionStorage.getItem("archivedBadges");
+  const savedLobbyProgress = sessionStorage.getItem("lobbyProgress");
 
-    if (savedDays !== null) setDays(Number(savedDays)); 
-    if (savedMoney !== null) setSaved(Number(savedMoney));
-    if (savedArchived) setArchivedBadges(JSON.parse(savedArchived));
-    if (savedLobbyProgress) setLobbyProgress(JSON.parse(savedLobbyProgress));
+  if (savedDays !== null) setDays(Number(savedDays)); 
+  if (savedMoney !== null) setSaved(Number(savedMoney));
 
-    if (savedName) { 
-      setNickname(savedName);
-      setScreen("modeSelect");
-    }
+  if (savedArchived) setArchivedBadges(JSON.parse(savedArchived));
+  if (savedLobbyProgress) setLobbyProgress(JSON.parse(savedLobbyProgress));
 
-    if (window.ethereum && window.ethereum.selectedAddress) {
-      setUserWalletAddress(window.ethereum.selectedAddress.toLowerCase());
-    }
+  if (savedName) { 
+    setNickname(savedName);
+    setScreen("modeSelect");
+  }
 
-    setIsLoaded(true);
+  if (window.ethereum && window.ethereum.selectedAddress) {
+    setUserWalletAddress(window.ethereum.selectedAddress.toLowerCase());
+  }
+
+  setIsLoaded(true);
   }, []);
 
   useEffect(() => { 
-    if (!isLoaded) return;
-    sessionStorage.setItem("days", days);
-    sessionStorage.setItem("saved", saved);
-    sessionStorage.setItem("nickname", nickname);
-    sessionStorage.setItem("archivedBadges", JSON.stringify(archivedBadges));
-    sessionStorage.setItem("lobbyProgress", JSON.stringify(lobbyProgress));
+  if (!isLoaded) return;
+
+  sessionStorage.setItem("days", days);
+  sessionStorage.setItem("saved", saved);
+  sessionStorage.setItem("nickname", nickname);
+  sessionStorage.setItem("archivedBadges", JSON.stringify(archivedBadges));
+  sessionStorage.setItem("lobbyProgress", JSON.stringify(lobbyProgress));
+
   }, [days, saved, nickname, archivedBadges, lobbyProgress, isLoaded]);
 
   function getChallengeContract(signerOrProvider) {
     return new ethers.Contract(GROUP_CONTRACT_ADDRESS, GROUP_CONTRACT_ABI, signerOrProvider);
   }
+ 
+  function getGroupContract(signerOrProvider) {
+  return new ethers.Contract(
+    GROUP_CONTRACT_ADDRESS,
+    GROUP_CONTRACT_ABI,
+    signerOrProvider
+  );
+}
 
   function validatePassword(pwd) {
     if (pwd.length !== 5) return false;
@@ -124,8 +135,56 @@ function App() {
     setScreen("modeSelect");
   }
 
-  const currentLobbyData = activeLobby ? lobbyProgress[activeLobby.id] || { days: 0, active: true, finished: false } : { days: 0, active: true, finished: false };
-  const didWholeGroupSucceed = currentLobbyData.finished && currentLobbyData.active; 
+  const currentLobbyData = activeLobby
+  ? lobbyProgress[activeLobby.id] || { days: 0, active: true, finished: false }
+  : { days: 0, active: true, finished: false };
+
+  const [members, setMembers] = useState([]);
+  useEffect(() => {
+  if (!activeLobby?.id) return;
+
+  loadMembers(activeLobby.id); // initial load
+
+  const interval = setInterval(() => {
+    loadMembers(activeLobby.id); // refresh svakih 5 sekundi
+  }, 5000);
+
+  return () => clearInterval(interval);
+  }, 
+  [activeLobby?.id, userWalletAddress]);
+
+
+  async function loadMembers(lobbyId) {
+  try {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const contract = getGroupContract(provider);
+
+    const addresses = await contract.getParticipants(lobbyId);
+
+    const lobby = await contract.getChallenge(lobbyId);
+    const groupDays = Number(lobby[7]); // ili contract field koji drži progress
+
+    const mapped = addresses.map((addr) => ({
+      address: addr,
+      name:
+    addr.toLowerCase() === userWalletAddress
+      ? nickname || "You"
+      : addr.slice(0, 6) + "..." + addr.slice(-4),
+
+      days: groupDays,
+      status: "active"
+      }));
+
+    setMembers(mapped);
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// grupni NFT samo ako SVI uspiju
+  const didWholeGroupSucceed =
+  currentLobbyData.finished &&
+  members.every(m => m.status === "active");
 
   function handleGroupProgressUpdate() {
     if (!activeLobby) return;
@@ -240,10 +299,28 @@ function App() {
   }
 
   async function mintGroupNFT() {
-    alert("🏆 TX Sent: Minting special shared Team NFT for completing the challenge without any group slip-ups! 🎉");
+  try {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+
+    const groupContract = getGroupContract(signer);
+
+    const tx = await groupContract.mintGroupNFT(activeLobby.id);
+    await tx.wait();
+
+    alert("🏆 Group NFT minted!");
+  } catch (err) {
+    console.error(err);
+    alert("Mint failed (not all conditions met or challenge not finished)");
   }
+}
 
   async function createChallenge() {
+    console.log("========== CREATE CHALLENGE ==========");
+    console.log("NAME:", challengeName);
+    console.log("PASSWORD:", challengePassword);
+    console.log("DURATION:", challengeDuration);
+    console.log("FEE:", challengeFee);
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
@@ -262,9 +339,23 @@ function App() {
       const duration = Number(challengeDuration);
       if (duration < 1 || duration > 60) { alert("Duration 1-60 days"); return; }
 
-      const tx = await contract.createChallenge(challengeName, challengePassword, duration, ethers.parseEther(challengeFee));
-      const receipt = await tx.wait();
-      let challengeId = null;
+  const parsedFee = ethers.parseEther(challengeFee);
+
+    console.log("PARSED FEE:", parsedFee.toString());
+
+    const tx = await contract.createChallenge(
+     challengeName,
+     challengePassword,
+      duration,
+      parsedFee
+    );
+
+    console.log("TX HASH:", tx.hash);     
+    const receipt = await tx.wait();
+    console.log("TX CONFIRMED");  
+    console.log(receipt);
+    
+    let challengeId = null;
       
       if (receipt.logs) {
         for (const log of receipt.logs) {
@@ -283,10 +374,13 @@ function App() {
       setChallengeName(""); setChallengeDuration(""); setChallengeFee(""); setChallengePassword("");
       alert("Challenge created successfully! Enter via lobby list.");
     } catch (err) { 
-      console.error(err); 
-      alert("Failed to create. (Simulating backend insertion for presentation)"); 
-      setChallenges(prev => [...prev, { id: Date.now(), name: challengeName, password: challengePassword, duration: Number(challengeDuration), entryFee: ethers.parseEther(challengeFee || "0"), creator: userWalletAddress, prizePool: ethers.parseEther(challengeFee || "0"), startTime: Date.now(), active: true }]);
-      setGroupScreen("list");
+  console.error("CREATE ERROR");
+  console.error(err);
+      alert(
+    err.reason ||
+    err.shortMessage ||
+    err.message ||
+    "Unknown error");
     }
   }
 
@@ -295,6 +389,14 @@ function App() {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
       const contract = getChallengeContract(signer);
+      console.log("CONTRACT:", GROUP_CONTRACT_ADDRESS);
+
+try {
+  const count = await contract.challengeCount();
+  console.log("CHALLENGE COUNT:", count.toString());
+} catch(e) {
+  console.error("challengeCount ERROR:", e);
+}
       const tx = await contract.joinChallenge(challenge.id, { value: challenge.entryFee });
       await tx.wait();
 
@@ -328,6 +430,8 @@ function App() {
       try {
         const provider = new ethers.BrowserProvider(window.ethereum);
         const contract = getChallengeContract(provider);
+        const count = await contract.challengeCount();
+console.log("TOTAL CHALLENGES:", count.toString());
         const c = await contract.getChallenge(Number(searchId));
         
         // provjera postoji li lobby (ako je duration 0, ne postoji)
@@ -350,20 +454,73 @@ function App() {
   }
 
   async function loadChallenges() {
+  console.log("===== LOAD CHALLENGES =====");
+  console.log("ADDRESS:", GROUP_CONTRACT_ADDRESS);
+
+  try {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const contract = getChallengeContract(provider);
+
+    const list = [];
+
+    // BITNO: uzimamo stvarni broj challenga iz contracta
+    let count = 0;
+
     try {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      const contract = getChallengeContract(provider);
-      const list = [];
-      for (let i = 1; i <= 20; i++) {
-        try {
-          const c = await contract.getChallenge(i);
-          if (!c || c[5] === "0x0000000000000000000000000000000000000000" || Number(c[3]) === 0) continue;
-          list.push({ id: Number(c[0]), name: c[1], password: c[2], duration: Number(c[3]), entryFee: c[4], creator: c[5], prizePool: c[6], startTime: Number(c[7]), active: c[8] });
-         } catch { break; }
-       }
-       setChallenges(list); setGroupScreen("list"); 
-     } catch (err) { console.error(err); }
+      count = await contract.challengeCount();
+      console.log("TOTAL CHALLENGES:", count.toString());
+    } catch (e) {
+      console.error("challengeCount error:", e);
+    }
+
+    if (Number(count) === 0) {
+      console.log("No challenges found on chain");
+      setChallenges([]);
+      setGroupScreen("list");
+      return;
+    }
+
+    for (let i = 1; i <= Number(count); i++) {
+      console.log("TRYING CHALLENGE", i);
+
+      try {
+        const c = await contract.getChallenge(i);
+        console.log("FOUND:", c);
+
+        // safety check (valid contract entry)
+        if (
+          !c ||
+          c[5] === "0x0000000000000000000000000000000000000000" ||
+          Number(c[3]) === 0
+        ) {
+          continue;
+        }
+
+        list.push({
+          id: Number(c[0]),
+          name: c[1],
+          password: c[2],
+          duration: Number(c[3]),
+          entryFee: c[4],
+          creator: c[5],
+          prizePool: c[6],
+          startTime: Number(c[7]),
+          active: c[8],
+        });
+      } catch (err) {
+        console.log("No challenge at index", i);
+        break;
+      }
+    }
+
+    console.log("FINAL LIST:", list);
+
+    setChallenges(list);
+    setGroupScreen("list");
+  } catch (err) {
+    console.error("LOAD CHALLENGES ERROR:", err);
   }
+}
 
   return (
     <div className="app">
@@ -494,7 +651,7 @@ function App() {
                 
                 {didWholeGroupSucceed ? (
                   <div style={{ backgroundColor: "#fff", padding: "10px", borderRadius: "8px", border: "1px dashed #00c853" }}>
-                    <p style={{ color: "#2e7d32", fontWeight: "bold", margin: "0 0 5px 0", fontSize: "12px" }}>🎉 Cijeli tim je uspio bez padova! Otključan zajednički NFT!</p>
+                    <p style={{ color: "#2e7d32", fontWeight: "bold", margin: "0 0 5px 0", fontSize: "12px" }}>Whole team menaged to not slip up! Team NFT unlocked 🎉</p>
                     <button className="good" style={{ padding: "6px 12px", fontSize: "12px" }} onClick={mintGroupNFT}>Mint Shared Group NFT</button>
                   </div>
                 ) : (
@@ -527,26 +684,35 @@ function App() {
             <div className="lobby-members-list">
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                 <h3>Lobby Status</h3>
-                <span style={{ fontSize: "12px", color: "#666" }}>👥 3 Člana</span>
+                <span style={{ fontSize: "12px", color: "#666" }}> 👥 {members.length} / {activeLobby?.maxPlayers || 10} članova</span>
               </div>
               
               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                <div className="member-row" style={{ borderLeft: currentLobbyData.finished ? "4px solid #00c853" : currentLobbyData.active ? "4px solid #a2d797" : "4px solid #c96a6a" }}>
-                  <span>👤 {nickname || "You"} <strong>({currentLobbyData.days}d)</strong></span>
-                  {currentLobbyData.finished ? <span style={{ color: "#00c853", fontWeight: "bold" }}>👑 Winner</span> : currentLobbyData.active ? <span className="member-status-active">🟢 Active</span> : <span className="member-status-failed">🔴 Failed</span>}
-                </div>
+              {members.map((member, i) => (
+              <div
+              key={i}
+              className="member-row"
+              style={{
+              borderLeft:
+                  member.status === "active"
+                  ? "4px solid #a2d797"
+                  : "4px solid #c96a6a",
+             opacity: member.status === "active" ? 1 : 0.6
+               }}
+               >
+               <span>
+               👤 {member.name} <strong>({member.days}d)</strong>
+               </span>
 
-                <div className="member-row" style={{ borderLeft: currentLobbyData.finished ? "4px solid #00c853" : "4px solid #a2d797" }}>
-                  <span>👤 aso_pula <strong>({currentLobbyData.finished ? activeLobby?.duration : Math.max(1, currentLobbyData.days)}d)</strong></span>
-                  {currentLobbyData.finished ? <span style={{ color: "#00c853", fontWeight: "bold" }}>👑 Winner</span> : <span className="member-status-active">🟢 Active</span>}
-                </div>
-
-                <div className="member-row" style={{ opacity: 0.5, background: "#fdf8f8", borderLeft: "4px solid #c96a6a" }}>
-                  <span>👤 janko_failer <strong style={{ color: "#c96a6a" }}>(0d)</strong></span>
-                  <span className="member-status-failed">🔴 Failed</span>
-                </div>
+                 {member.status === "active" ? (
+              <span className="member-status-active">🟢 Active</span>
+               ) : (
+                 <span className="member-status-failed">🔴 Failed</span>
+                 )}
               </div>
-            </div>
+                 ))}
+                </div>
+                </div>
 
             <div className="buttons" style={{ flexDirection: "column", gap: "10px" }}>
               <button 

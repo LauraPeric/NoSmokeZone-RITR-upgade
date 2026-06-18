@@ -60,7 +60,7 @@ contract SmokeFreeBadges is ERC721URIStorage, Ownable { // nft contract+ima owne
         return "ipfs://bafybeif5ujkllemacyptavexdu6lx2wfscxnlkokcwvbpb6bepn25wtp4q/day60.json";
     }
     if (milestone == 100) {
-        return "ipfs://bafkreignkt7xq7smgiyz2t6n27yxgwy4i7aafqhi2xm4tz5dlsgzbk5i7i"; // DODANO: Vraća tvoj grupni JSON s Pinate
+        return "ipfs://bafkreignkt7xq7smgiyz2t6n27yxgwy4i7aafqhi2xm4tz5dlsgzbk5i7i"; 
     }
 
     return "";
