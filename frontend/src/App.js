@@ -44,7 +44,7 @@ function App() {
 
   const milestones = [1, 7, 15, 30, 60];
   
-  const [fadeOut, setFadeOut] = useState(false); 
+  // const [fadeOut, setFadeOut] = useState(false); 
 
   const slipText = [
   "Slipped once",
