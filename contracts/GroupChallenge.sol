@@ -1,14 +1,18 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-// Interface nam treba samo da znamo pozvati mintBadge funkciju
+// Interface za NFT contract
 interface ISmokeFreeBadges {
     function mintBadge(address user, uint milestone) external;
 }
 
 contract GroupChallenge {
+
     uint public challengeCount;
+
     ISmokeFreeBadges public badgeContract;
+    
+    bool public demoMode = true;
 
     event ChallengeCreated(uint challengeId, string name, address creator);
 
@@ -29,13 +33,20 @@ contract GroupChallenge {
     mapping(uint => mapping(address => bool)) public joined;
     mapping(uint => mapping(address => bool)) public isFailed;
 
-    // Ovu funkciju pozivaš jednom nakon deploymenta da povežeš ugovore
+    // connect NFT contract
     function setBadgeContract(address _addr) public {
         badgeContract = ISmokeFreeBadges(_addr);
     }
 
-    function createChallenge(string memory _name, string memory _password, uint _duration, uint _entryFee) public {
+    // CREATE
+    function createChallenge(
+        string memory _name,
+        string memory _password,
+        uint _duration,
+        uint _entryFee
+    ) public {
         challengeCount++;
+
         challenges[challengeCount] = Challenge(
             challengeCount,
             _name,
@@ -47,32 +58,38 @@ contract GroupChallenge {
             block.timestamp,
             true
         );
+
         emit ChallengeCreated(challengeCount, _name, msg.sender);
     }
 
+    // JOIN
     function joinChallenge(uint challengeId) public payable {
         Challenge storage c = challenges[challengeId];
+
         require(c.active, "Not active");
         require(!joined[challengeId][msg.sender], "Already joined");
         require(msg.value == c.entryFee, "Wrong entry fee");
 
         participants[challengeId].push(msg.sender);
         joined[challengeId][msg.sender] = true;
+
         c.prizePool += msg.value;
     }
 
+    // FAIL REPORT
     function reportFail(uint challengeId) public {
         require(joined[challengeId][msg.sender], "Not participant");
         isFailed[challengeId][msg.sender] = true;
     }
 
+    // CLAIM PRIZE
     function claimPrize(uint challengeId) public {
         Challenge storage c = challenges[challengeId];
 
         require(c.active, "Already finished");
-        require(block.timestamp >= c.startTime + (c.duration * 1 days), "Challenge still active");
+        require(block.timestamp >= c.startTime + (c.duration * 1 days), "Not finished yet");
         require(joined[challengeId][msg.sender], "Not participant");
-        require(!isFailed[challengeId][msg.sender], "Failed participant");
+        require(!isFailed[challengeId][msg.sender], "Failed user");
 
         uint winners = 0;
         bool allSurvived = true;
@@ -95,6 +112,7 @@ contract GroupChallenge {
         }
 
         uint reward = c.prizePool / winners;
+
         c.active = false;
         c.prizePool -= reward;
 
@@ -102,30 +120,27 @@ contract GroupChallenge {
         require(success, "Transfer failed");
     }
 
-    // Mint Shared Group NFT"
+    // GROUP NFT
     function mintGroupNFT(uint challengeId) public {
-        Challenge storage c = challenges[challengeId];
+    require(address(badgeContract) != address(0), "No NFT contract");
 
-        require(!c.active, "Challenge not finished yet");
-        require(block.timestamp >= c.startTime + (c.duration * 1 days), "Too early");
-        require(address(badgeContract) != address(0), "Badge contract not set");
+    bool allSurvived = true;
 
-        bool allSurvived = true;
-
-        for (uint i = 0; i < participants[challengeId].length; i++) {
-            if (isFailed[challengeId][participants[challengeId][i]]) {
-                allSurvived = false;
-                break;
-            }
-        }
-
-        require(allSurvived, "Not all participants survived");
-
-        for (uint i = 0; i < participants[challengeId].length; i++) {
-            badgeContract.mintBadge(participants[challengeId][i], 100);
+    for (uint i = 0; i < participants[challengeId].length; i++) {
+        if (isFailed[challengeId][participants[challengeId][i]]) {
+            allSurvived = false;
+            break;
         }
     }
 
+    require(allSurvived, "Not all survived");
+
+    for (uint i = 0; i < participants[challengeId].length; i++) {
+        badgeContract.mintBadge(participants[challengeId][i], 100);
+    }
+}
+
+    // VIEW CHALLENGE
     function getChallenge(uint id) public view returns (
         uint,
         string memory,
@@ -138,10 +153,42 @@ contract GroupChallenge {
         bool
     ) {
         Challenge memory c = challenges[id];
-        return (c.id, c.name, c.password, c.duration, c.entryFee, c.creator, c.prizePool, c.startTime, c.active);
+
+        return (
+            c.id,
+            c.name,
+            c.password,
+            c.duration,
+            c.entryFee,
+            c.creator,
+            c.prizePool,
+            c.startTime,
+            c.active
+        );
     }
 
     function getParticipants(uint id) public view returns (address[] memory) {
         return participants[id];
+    }
+
+    // SIMPLE DISTRIBUTION
+    function distributeRewards(uint challengeId) public {
+        Challenge storage c = challenges[challengeId];
+
+        address[] storage users = participants[challengeId];
+        uint count = users.length;
+
+        require(count > 0, "No participants");
+        require(c.prizePool > 0, "No pool");
+
+        uint share = c.prizePool / count;
+
+        for (uint i = 0; i < count; i++) {
+            (bool success, ) = payable(users[i]).call{value: share}("");
+            require(success, "Transfer failed");
+        }
+
+        c.prizePool = 0;
+        c.active = false;
     }
 }

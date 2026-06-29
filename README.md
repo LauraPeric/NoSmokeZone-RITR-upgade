@@ -55,7 +55,6 @@ Interakcija s blockchainom ostvaruje se putem MetaMask walleta. Sustav ne korist
 * ✅ Manualno označavanje dana bez pušenja (“mark smoke free”).
 * ✅ Reset osobnog streaka u slučaju pokleknuća (“slip-up”).
 * ✅ Automatsko mintanje NFT bedževa pri milestone-ovima (1, 7, 15, 30, 60 dana).
-* ✅ **Personalizacija bedževa (Novo):** Korisnici mogu unijeti prilagođene parametre (npr. vlastito ime, motivacijsku poruku ili odabir vizualnog stila) prije mintanja milestone NFT-a.
 
 ### 2. Grupni izazovi (Group Mode) – *(Novo)*
 * ✅ **Kreiranje i pridruživanje grupama:** Korisnici mogu kreirati manje izazove s definiranim trajanjem (u danima) i ulogom, ili se pridružiti postojećima.

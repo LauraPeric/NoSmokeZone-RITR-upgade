@@ -100,8 +100,9 @@ function App() {
     GROUP_CONTRACT_ABI,
     signerOrProvider
   );
-}
+ }
 
+ 
   function validatePassword(pwd) {
     if (pwd.length !== 5) return false;
     const digitsCount = (pwd.match(/\d/g) || []).length;
@@ -160,6 +161,8 @@ function App() {
     const contract = getGroupContract(provider);
 
     const addresses = await contract.getParticipants(lobbyId);
+    console.log("PARTICIPANTS:", addresses);
+
 
     const lobby = await contract.getChallenge(lobbyId);
     const groupDays = Number(lobby[7]); // ili contract field koji drži progress
@@ -178,10 +181,10 @@ function App() {
     setMembers(mapped);
   } catch (err) {
     console.error(err);
-  }
-}
+  } 
+ }
 
-// grupni NFT samo ako SVI uspiju
+ // grupni NFT samo ako SVI uspiju
   const didWholeGroupSucceed =
   currentLobbyData.finished &&
   members.every(m => m.status === "active");
@@ -285,9 +288,9 @@ function App() {
       alert("Transaction failed");
       setLoading(false);
     }
-  }
+   }
 
-  async function slippedToday() {
+   async function slippedToday() {
     try {
       const provider = new ethers.BrowserProvider(window.ethereum);
       const signer = await provider.getSigner();
@@ -296,10 +299,10 @@ function App() {
       await tx.wait();
     } catch (err) { console.error(err); }
     handleLocalSlip();
-  }
+   }
 
-  async function mintGroupNFT() {
-  try {
+   async function mintGroupNFT() {
+     try {
     const provider = new ethers.BrowserProvider(window.ethereum);
     const signer = await provider.getSigner();
 
@@ -308,12 +311,28 @@ function App() {
     const tx = await groupContract.mintGroupNFT(activeLobby.id);
     await tx.wait();
 
-    alert("🏆 Group NFT minted!");
-  } catch (err) {
-    console.error(err);
-    alert("Mint failed (not all conditions met or challenge not finished)");
+     alert("🏆 Group NFT minted!");
+   } catch (err) {
+     console.error(err);
+     alert("Mint failed (not all conditions met or challenge not finished)");
+   }
+   }
+
+   async function distributeRewards() {
+     try {
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const contract = getGroupContract(signer);
+
+    const tx = await contract.distributeRewards(activeLobby.id);
+    await tx.wait();
+
+    alert("💰 Rewards distributed to all members!");
+      } catch (err) {
+        console.error(err);
+        alert("Distribution failed");
+     }
   }
-}
 
   async function createChallenge() {
     console.log("========== CREATE CHALLENGE ==========");
@@ -391,12 +410,12 @@ function App() {
       const contract = getChallengeContract(signer);
       console.log("CONTRACT:", GROUP_CONTRACT_ADDRESS);
 
-try {
-  const count = await contract.challengeCount();
-  console.log("CHALLENGE COUNT:", count.toString());
-} catch(e) {
-  console.error("challengeCount ERROR:", e);
-}
+      try {
+      const count = await contract.challengeCount();
+      console.log("CHALLENGE COUNT:", count.toString()); 
+      } catch(e) {
+      console.error("challengeCount ERROR:", e);
+      }
       const tx = await contract.joinChallenge(challenge.id, { value: challenge.entryFee });
       await tx.wait();
 
@@ -431,7 +450,7 @@ try {
         const provider = new ethers.BrowserProvider(window.ethereum);
         const contract = getChallengeContract(provider);
         const count = await contract.challengeCount();
-console.log("TOTAL CHALLENGES:", count.toString());
+        console.log("TOTAL CHALLENGES:", count.toString());
         const c = await contract.getChallenge(Number(searchId));
         
         // provjera postoji li lobby (ako je duration 0, ne postoji)
@@ -460,6 +479,9 @@ console.log("TOTAL CHALLENGES:", count.toString());
   try {
     const provider = new ethers.BrowserProvider(window.ethereum);
     const contract = getChallengeContract(provider);
+    const network = await provider.getNetwork();
+
+    console.log("CHAIN ID:", network.chainId);
 
     const list = [];
 
@@ -520,7 +542,7 @@ console.log("TOTAL CHALLENGES:", count.toString());
   } catch (err) {
     console.error("LOAD CHALLENGES ERROR:", err);
   }
-}
+ }
 
   return (
     <div className="app">
@@ -653,6 +675,7 @@ console.log("TOTAL CHALLENGES:", count.toString());
                   <div style={{ backgroundColor: "#fff", padding: "10px", borderRadius: "8px", border: "1px dashed #00c853" }}>
                     <p style={{ color: "#2e7d32", fontWeight: "bold", margin: "0 0 5px 0", fontSize: "12px" }}>Whole team menaged to not slip up! Team NFT unlocked 🎉</p>
                     <button className="good" style={{ padding: "6px 12px", fontSize: "12px" }} onClick={mintGroupNFT}>Mint Shared Group NFT</button>
+                    <button className="good" style={{ padding: "6px 12px", fontSize: "12px", marginTop: "10px" }}  onClick={distributeRewards}> 💰 Distribute ETH Rewards</button>
                   </div>
                 ) : (
                   <p style={{ color: "#d32f2f", fontSize: "11px", margin: 0 }}>⚠️ Nažalost, netko iz grupe je imao slip-up, pa zajednički NFT nije dostupan.</p>
