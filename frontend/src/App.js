@@ -141,7 +141,10 @@ function App() {
   : { days: 0, active: true, finished: false };
 
   const [members, setMembers] = useState([]);
+  
   useEffect(() => {
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+
   if (!activeLobby?.id) return;
 
   loadMembers(activeLobby.id); // initial load
@@ -374,7 +377,7 @@ function App() {
     console.log("TX CONFIRMED");  
     console.log(receipt);
     
-    let challengeId = null;
+    // let challengeId = null;
       
       if (receipt.logs) {
         for (const log of receipt.logs) {
